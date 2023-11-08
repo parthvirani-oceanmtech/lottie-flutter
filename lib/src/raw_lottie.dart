@@ -24,8 +24,10 @@ class RawLottie extends LeafRenderObjectWidget {
     this.fit,
     AlignmentGeometry? alignment,
     this.filterQuality,
+    bool? enableRenderCache,
   })  : progress = progress ?? 0.0,
-        alignment = alignment ?? Alignment.center;
+        alignment = alignment ?? Alignment.center,
+        enableRenderCache = enableRenderCache ?? false;
 
   /// The Lottie composition to display.
   final LottieComposition? composition;
@@ -78,6 +80,8 @@ class RawLottie extends LeafRenderObjectWidget {
   ///    relative to text direction.
   final AlignmentGeometry alignment;
 
+  final bool enableRenderCache;
+
   final FilterQuality? filterQuality;
 
   @override
@@ -94,6 +98,7 @@ class RawLottie extends LeafRenderObjectWidget {
       fit: fit,
       alignment: alignment,
       filterQuality: filterQuality,
+      enableRenderCache: enableRenderCache,
     );
   }
 
@@ -112,7 +117,8 @@ class RawLottie extends LeafRenderObjectWidget {
       ..width = width
       ..height = height
       ..alignment = alignment
-      ..fit = fit;
+      ..fit = fit
+      ..enableRenderCache = enableRenderCache;
   }
 
   @override

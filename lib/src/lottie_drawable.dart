@@ -6,6 +6,7 @@ import 'lottie_delegates.dart';
 import 'model/key_path.dart';
 import 'model/layer/composition_layer.dart';
 import 'parser/layer_parser.dart';
+import 'render_cache.dart';
 import 'utils.dart';
 import 'value_delegate.dart';
 
@@ -14,6 +15,7 @@ class LottieDrawable {
   final _matrix = Matrix4.identity();
   late CompositionLayer _compositionLayer;
   final Size size;
+  final FrameRate? frameRate;
   LottieDelegates? _delegates;
   bool _isDirty = true;
   bool enableMergePaths = false;
@@ -22,7 +24,7 @@ class LottieDrawable {
   /// Gives a suggestion whether to paint with anti-aliasing, or not. Default is true.
   bool antiAliasingSuggested = true;
 
-  LottieDrawable(this.composition, {LottieDelegates? delegates})
+  LottieDrawable(this.composition, {LottieDelegates? delegates, this.frameRate})
       : size = Size(composition.bounds.width.toDouble(),
             composition.bounds.height.toDouble()) {
     this.delegates = delegates;
@@ -50,8 +52,8 @@ class LottieDrawable {
 
   double get progress => _progress ?? 0.0;
   double? _progress;
-  bool setProgress(double value, {FrameRate? frameRate}) {
-    frameRate ??= FrameRate.composition;
+  bool setProgress(double value) {
+    var frameRate = this.frameRate ?? FrameRate.composition;
     var roundedProgress =
         composition.roundProgress(value, frameRate: frameRate);
     if (roundedProgress != _progress) {
@@ -139,8 +141,9 @@ class LottieDrawable {
     return keyPaths;
   }
 
+  static final _normalPaint = Paint();
   void draw(ui.Canvas canvas, ui.Rect rect,
-      {BoxFit? fit, Alignment? alignment}) {
+      {BoxFit? fit, Alignment? alignment, RenderCacheHandle? renderCache}) {
     if (rect.isEmpty) {
       return;
     }
@@ -163,9 +166,34 @@ class LottieDrawable {
     canvas.save();
     canvas.translate(destinationRect.left, destinationRect.top);
     _matrix.setIdentity();
-    _matrix.scale(destinationRect.size.width / sourceRect.width,
-        destinationRect.size.height / sourceRect.height);
-    _compositionLayer.draw(canvas, rect.size, _matrix, parentAlpha: 255);
+
+    "Global render cache";
+    // Cache key: composition, destinationRect.size, frameRate
+    // Create global texture for this entire animation
+    // handle dispose => at a higher level
+    if (renderCache != null) {
+      var cacheKey = CacheKey(
+          composition: composition,
+          size: destinationRect.size,
+          frameRate: frameRate ?? FrameRate.composition);
+      var cache = renderCache.withKey(cacheKey);
+      // renderCache is alerady dedicated for this specific animation
+      // Composition, FrameRate & Size are already taken into account
+      // This require that the size is available before calling this function
+      // So we have to split the size calculation & drawing
+
+      _matrix.scale(destinationRect.size.width / sourceRect.width,
+          destinationRect.size.height / sourceRect.height);
+      var cachedImage = cache.imageForProgress(progress, (cacheCanvas) {
+        _compositionLayer.draw(cacheCanvas, destinationRect.size, _matrix,
+            parentAlpha: 255);
+      });
+      canvas.drawImage(cachedImage, destinationRect.topLeft, _normalPaint);
+    } else {
+      _matrix.scale(destinationRect.size.width / sourceRect.width,
+          destinationRect.size.height / sourceRect.height);
+      _compositionLayer.draw(canvas, rect.size, _matrix, parentAlpha: 255);
+    }
     canvas.restore();
   }
 }

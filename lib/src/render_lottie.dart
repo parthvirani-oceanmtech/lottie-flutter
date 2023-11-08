@@ -3,6 +3,7 @@ import 'composition.dart';
 import 'frame_rate.dart';
 import 'lottie_delegates.dart';
 import 'lottie_drawable.dart';
+import 'render_cache.dart';
 
 /// A Lottie animation in the render tree.
 ///
@@ -21,10 +22,11 @@ class RenderLottie extends RenderBox {
     BoxFit? fit,
     AlignmentGeometry alignment = Alignment.center,
     FilterQuality? filterQuality,
+    bool enableRenderCache = false,
   })  : assert(progress >= 0.0 && progress <= 1.0),
         _drawable = composition != null
-            ? (LottieDrawable(composition)
-              ..setProgress(progress, frameRate: frameRate)
+            ? (LottieDrawable(composition, frameRate: frameRate)
+              ..setProgress(progress)
               ..delegates = delegates
               ..enableMergePaths = enableMergePaths ?? false
               ..isApplyingOpacityToLayersEnabled =
@@ -34,7 +36,8 @@ class RenderLottie extends RenderBox {
         _width = width,
         _height = height,
         _fit = fit,
-        _alignment = alignment;
+        _alignment = alignment,
+        _enableRenderCache = enableRenderCache;
 
   /// The lottie composition to display.
   LottieComposition? get composition => _drawable?.composition;
@@ -60,13 +63,18 @@ class RenderLottie extends RenderBox {
         needsLayout = true;
       }
     } else {
-      if (drawable == null || drawable.composition != composition) {
-        drawable = _drawable = LottieDrawable(composition);
+      if (drawable == null ||
+          drawable.composition != composition ||
+          drawable.frameRate != frameRate) {
+        print(
+            "New drawable ${drawable?.composition != composition} ${drawable?.frameRate != frameRate}");
+        drawable =
+            _drawable = LottieDrawable(composition, frameRate: frameRate);
         needsLayout = true;
         needsPaint = true;
       }
 
-      needsPaint |= drawable.setProgress(progress, frameRate: frameRate);
+      needsPaint |= drawable.setProgress(progress);
 
       if (drawable.delegates != delegates) {
         drawable.delegates = delegates;
@@ -129,7 +137,6 @@ class RenderLottie extends RenderBox {
   /// How to inscribe the composition into the space allocated during layout.
   BoxFit? get fit => _fit;
   BoxFit? _fit;
-
   set fit(BoxFit? value) {
     if (value == _fit) {
       return;
@@ -139,9 +146,6 @@ class RenderLottie extends RenderBox {
   }
 
   /// How to align the composition within its bounds.
-  ///
-  /// If this is set to a text-direction-dependent value, [textDirection] must
-  /// not be null.
   AlignmentGeometry get alignment => _alignment;
   AlignmentGeometry _alignment;
 
@@ -150,6 +154,17 @@ class RenderLottie extends RenderBox {
       return;
     }
     _alignment = value;
+    markNeedsPaint();
+  }
+
+  bool get enableRenderCache => _enableRenderCache;
+  bool _enableRenderCache;
+  set enableRenderCache(bool value) {
+    if (value == _enableRenderCache) {
+      return;
+    }
+    _enableRenderCache = value;
+    markNeedsPaint();
   }
 
   /// Find a size for the render composition within the given constraints.
@@ -226,8 +241,17 @@ class RenderLottie extends RenderBox {
   void paint(PaintingContext context, Offset offset) {
     if (_drawable == null) return;
 
+    RenderCacheHandle? cacheHandle;
+    if (enableRenderCache) {
+      cacheHandle = globalRenderCache.acquire(this);
+    } else {
+      globalRenderCache.release(this);
+    }
+
     _drawable!.draw(context.canvas, offset & size,
-        fit: _fit, alignment: _alignment.resolve(TextDirection.ltr));
+        fit: _fit,
+        alignment: _alignment.resolve(TextDirection.ltr),
+        renderCache: cacheHandle);
   }
 
   @override
@@ -241,5 +265,11 @@ class RenderLottie extends RenderBox {
     properties.add(DiagnosticsProperty<AlignmentGeometry>(
         'alignment', alignment,
         defaultValue: null));
+  }
+
+  @override
+  void dispose() {
+    globalRenderCache.release(this);
+    super.dispose();
   }
 }

@@ -60,6 +60,7 @@ class LottieBuilder extends StatefulWidget {
     this.addRepaintBoundary,
     this.filterQuality,
     this.onWarning,
+    this.enableRenderCache,
   });
 
   /// Creates a widget that displays an [LottieComposition] obtained from the network.
@@ -86,6 +87,7 @@ class LottieBuilder extends StatefulWidget {
     this.filterQuality,
     this.onWarning,
     LottieDecoder? decoder,
+    this.enableRenderCache,
   }) : lottie = NetworkLottie(src,
             headers: headers,
             imageProviderFactory: imageProviderFactory,
@@ -123,6 +125,7 @@ class LottieBuilder extends StatefulWidget {
     this.filterQuality,
     this.onWarning,
     LottieDecoder? decoder,
+    this.enableRenderCache,
   }) : lottie = FileLottie(file,
             imageProviderFactory: imageProviderFactory, decoder: decoder);
 
@@ -151,6 +154,7 @@ class LottieBuilder extends StatefulWidget {
     this.filterQuality,
     this.onWarning,
     LottieDecoder? decoder,
+    this.enableRenderCache,
   }) : lottie = AssetLottie(name,
             bundle: bundle,
             package: package,
@@ -180,6 +184,7 @@ class LottieBuilder extends StatefulWidget {
     this.filterQuality,
     this.onWarning,
     LottieDecoder? decoder,
+    this.enableRenderCache,
   }) : lottie = MemoryLottie(bytes,
             imageProviderFactory: imageProviderFactory, decoder: decoder);
 
@@ -412,6 +417,8 @@ class LottieBuilder extends StatefulWidget {
   /// ```
   final ImageErrorWidgetBuilder? errorBuilder;
 
+  final bool? enableRenderCache;
+
   @override
   State<LottieBuilder> createState() => _LottieBuilderState();
 
@@ -507,6 +514,7 @@ class _LottieBuilderState extends State<LottieBuilder> {
           alignment: widget.alignment,
           addRepaintBoundary: widget.addRepaintBoundary,
           filterQuality: widget.filterQuality,
+          enableRenderCache: widget.enableRenderCache,
         );
 
         if (widget.frameBuilder != null) {

@@ -31,10 +31,12 @@ class Lottie extends StatefulWidget {
     this.options,
     bool? addRepaintBoundary,
     this.filterQuality,
+    bool? enableRenderCache,
   })  : animate = animate ?? true,
         reverse = reverse ?? false,
         repeat = repeat ?? true,
-        addRepaintBoundary = addRepaintBoundary ?? true;
+        addRepaintBoundary = addRepaintBoundary ?? true,
+        enableRenderCache = enableRenderCache ?? false;
 
   /// Creates a widget that displays an [LottieComposition] obtained from an [AssetBundle].
   static LottieBuilder asset(
@@ -61,6 +63,7 @@ class Lottie extends StatefulWidget {
     FilterQuality? filterQuality,
     WarningCallback? onWarning,
     LottieDecoder? decoder,
+    bool? enableRenderCache,
   }) =>
       LottieBuilder.asset(
         name,
@@ -86,6 +89,7 @@ class Lottie extends StatefulWidget {
         filterQuality: filterQuality,
         onWarning: onWarning,
         decoder: decoder,
+        enableRenderCache: enableRenderCache,
       );
 
   /// Creates a widget that displays an [LottieComposition] obtained from a [File].
@@ -111,6 +115,7 @@ class Lottie extends StatefulWidget {
     FilterQuality? filterQuality,
     WarningCallback? onWarning,
     LottieDecoder? decoder,
+    bool? enableRenderCache,
   }) =>
       LottieBuilder.file(
         file,
@@ -134,6 +139,7 @@ class Lottie extends StatefulWidget {
         filterQuality: filterQuality,
         onWarning: onWarning,
         decoder: decoder,
+        enableRenderCache: enableRenderCache,
       );
 
   /// Creates a widget that displays an [LottieComposition] obtained from a [Uint8List].
@@ -159,6 +165,7 @@ class Lottie extends StatefulWidget {
     FilterQuality? filterQuality,
     WarningCallback? onWarning,
     LottieDecoder? decoder,
+    bool? enableRenderCache,
   }) =>
       LottieBuilder.memory(
         bytes,
@@ -182,6 +189,7 @@ class Lottie extends StatefulWidget {
         filterQuality: filterQuality,
         onWarning: onWarning,
         decoder: decoder,
+        enableRenderCache: enableRenderCache,
       );
 
   /// Creates a widget that displays an [LottieComposition] obtained from the network.
@@ -207,6 +215,7 @@ class Lottie extends StatefulWidget {
     FilterQuality? filterQuality,
     WarningCallback? onWarning,
     LottieDecoder? decoder,
+    bool? enableRenderCache,
   }) =>
       LottieBuilder.network(
         url,
@@ -230,6 +239,7 @@ class Lottie extends StatefulWidget {
         filterQuality: filterQuality,
         onWarning: onWarning,
         decoder: decoder,
+        enableRenderCache: enableRenderCache,
       );
 
   /// The Lottie composition to animate.
@@ -326,6 +336,8 @@ class Lottie extends StatefulWidget {
   /// Defaults to [FilterQuality.low]
   final FilterQuality? filterQuality;
 
+  final bool enableRenderCache;
+
   static bool get traceEnabled => L.traceEnabled;
   static set traceEnabled(bool enabled) {
     L.traceEnabled = enabled;
@@ -394,6 +406,7 @@ class _LottieState extends State<Lottie> with TickerProviderStateMixin {
           fit: widget.fit,
           alignment: widget.alignment,
           filterQuality: widget.filterQuality,
+          enableRenderCache: widget.enableRenderCache,
         );
       },
     );
